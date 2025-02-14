@@ -32,8 +32,8 @@ version=$(curl -s https://api.github.com/repos/leonardobiffi/$project_name/relea
 url="https://github.com/leonardobiffi/$project_name/releases/download/$version"
 checksum_url="$url/checksums.txt"
 binary_version=$(echo $version | cut -c 2-)
-zip="${binary_name}_${binary_version}_${os}_${arch}.zip"
-release_name="${binary_name}_${os}_${arch}"
+zip="${project_name}_${binary_version}_${os}_${arch}.zip"
+release_name="${project_name}_${os}_${arch}"
 echo "Downloading latest release of $release_name..."
 curl -sL "$url/$zip" -o "/tmp/$zip"
 echo
