@@ -31,7 +31,7 @@ func (s *service) Run(ref string) {
 
 		if len(pipelines) <= 1 {
 			if retriesWithNoPipeline >= 3 {
-				s.logger.Fatalf("No other pipelines in queue after 3 retries, continue to run pipeline...")
+				s.logger.Printf("No other pipelines in queue after 3 retries, continue to run pipeline...")
 				return
 			}
 
