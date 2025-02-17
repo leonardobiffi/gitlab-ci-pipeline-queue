@@ -23,6 +23,11 @@ func (s *service) fetchPipelines(token string, projectID int, ref string) ([]*gi
 		s.logger.Fatalf("Failed to list pipelines: %v", err)
 	}
 
+	// revert the order of pipelines
+	for i, j := 0, len(pipelines)-1; i < j; i, j = i+1, j-1 {
+		pipelines[i], pipelines[j] = pipelines[j], pipelines[i]
+	}
+
 	// return all pipelines if ref is empty
 	if ref == "" {
 		for _, p := range pipelines {
