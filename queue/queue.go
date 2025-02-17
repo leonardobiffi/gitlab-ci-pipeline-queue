@@ -32,7 +32,7 @@ func (s *service) Run(ref string) {
 		}
 
 		s.logger.Debugf("Found %d pipelines in queue", len(pipelines))
-		s.logger.Debugf("Latest pipeline ID: %d", pipelines[0].ID)
+		s.logger.Debugf("Old pipeline ID: %d", pipelines[0].ID)
 
 		// check if the current pipeline is the oldest one
 		if pipelines[0].ID == env.PipelineID {

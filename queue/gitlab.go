@@ -23,7 +23,7 @@ func (s *service) fetchPipelines(token string, projectID int, ref string) ([]*gi
 		s.logger.Fatalf("Failed to list pipelines: %v", err)
 	}
 
-	// revert the order of pipelines
+	// revert the order of pipelines to first by oldest
 	for i, j := 0, len(pipelines)-1; i < j; i, j = i+1, j-1 {
 		pipelines[i], pipelines[j] = pipelines[j], pipelines[i]
 	}
