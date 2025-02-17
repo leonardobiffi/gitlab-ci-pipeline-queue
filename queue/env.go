@@ -13,7 +13,7 @@ type Env struct {
 }
 
 func (s *service) getEnv() Env {
-	apiToken := getEnvVar("CI_JOB_TOKEN")
+	apiToken := getEnvVar("QUEUE_PIPELINE_GITLAB_API_TOKEN")
 	pipelineIDStr := getEnvVar("CI_PIPELINE_ID")
 	projectIDStr := getEnvVar("CI_PROJECT_ID")
 
