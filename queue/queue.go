@@ -3,11 +3,12 @@ package queue
 import (
 	"time"
 
+	"github.com/leonardobiffi/gitlab-ci-pipeline-queue/entities"
 	"github.com/sirupsen/logrus"
 )
 
 type Service interface {
-	Run(ref string)
+	Run(flags entities.Flags)
 }
 
 type service struct {
@@ -16,7 +17,7 @@ type service struct {
 
 var _ Service = (*service)(nil)
 
-func (s *service) Run(ref string) {
+func (s *service) Run(flags entities.Flags) {
 	env := s.getEnv()
 
 	// retry counter for no pipeline in queue with no pipelines found
@@ -24,7 +25,10 @@ func (s *service) Run(ref string) {
 
 	// loop until the current pipeline is the oldest one
 	for {
-		pipelines, err := s.fetchPipelines(env.Token, env.ProjectID, ref)
+		pipelines, err := s.fetchPipelines(env.Token, env.ProjectID, flags)
+		for _, p := range pipelines {
+			s.logger.Debugf("ID: %d, Status: %s, Ref: %s, Source: %s", p.ID, p.Status, p.Ref, p.Source)
+		}
 		if err != nil {
 			s.logger.Fatalf("Failed to fetch pipelines: %v", err)
 		}
@@ -51,8 +55,12 @@ func (s *service) Run(ref string) {
 			return
 		}
 
-		s.logger.Println("The current pipeline is not the oldest one, let's wait for 10 seconds and retry")
-		time.Sleep(10 * time.Second)
+		if flags.Wait {
+			s.logger.Println("The current pipeline is not the oldest one, let's wait for 10 seconds and retry")
+			time.Sleep(10 * time.Second)
+		} else {
+			s.logger.Fatalf("The current pipeline ID: %d is not the oldest...", env.PipelineID)
+		}
 	}
 }
 

@@ -1,11 +1,14 @@
 package queue
 
 import (
+	"strings"
+
+	"github.com/leonardobiffi/gitlab-ci-pipeline-queue/entities"
 	gitlab "gitlab.com/gitlab-org/api/client-go"
 )
 
 // change use gitlab api to fetch pipelines
-func (s *service) fetchPipelines(token string, projectID int, ref string) ([]*gitlab.PipelineInfo, error) {
+func (s *service) fetchPipelines(token string, projectID int, flags entities.Flags) ([]*gitlab.PipelineInfo, error) {
 	git, err := gitlab.NewClient(token)
 	if err != nil {
 		s.logger.Fatalf("Failed to create client: %v", err)
@@ -16,8 +19,8 @@ func (s *service) fetchPipelines(token string, projectID int, ref string) ([]*gi
 			PerPage: 10,
 			Page:    1,
 		},
-		Scope: gitlab.Ptr("running"),
-		Sort:  gitlab.Ptr("desc"),
+		// Scope: gitlab.Ptr("running"),
+		Sort: gitlab.Ptr("desc"),
 	})
 	if err != nil {
 		s.logger.Fatalf("Failed to list pipelines: %v", err)
@@ -28,23 +31,49 @@ func (s *service) fetchPipelines(token string, projectID int, ref string) ([]*gi
 		pipelines[i], pipelines[j] = pipelines[j], pipelines[i]
 	}
 
-	// return all pipelines if ref is empty
-	if ref == "" {
-		for _, p := range pipelines {
-			s.logger.Debugf("ID: %d, Status: %s, Ref: %s", p.ID, p.Status, p.Ref)
-		}
-
+	// return all pipelines if filters flags is empty
+	if flags.Ref == "" && flags.RefContains == "" && flags.Source == "" && flags.RefPriority == "" {
 		return pipelines, nil
 	}
 
 	var filteredPipelines []*gitlab.PipelineInfo
 	for _, p := range pipelines {
-		// filter pipelines by ref if ref is not empty
-		if ref == p.Ref {
+		pipeline := filterPipelines(p, flags)
+		if pipeline != nil {
 			filteredPipelines = append(filteredPipelines, p)
-			s.logger.Debugf("ID: %d, Status: %s, Ref: %s", p.ID, p.Status, p.Ref)
 		}
 	}
 
+	// order pipelines by oldest and highest priority ref if informed
+	if flags.RefPriority != "" {
+		var priorityPipelines []*gitlab.PipelineInfo
+		var nonPriorityPipelines []*gitlab.PipelineInfo
+
+		for _, p := range filteredPipelines {
+			if p.Ref == flags.RefPriority {
+				priorityPipelines = append(priorityPipelines, p)
+			} else {
+				nonPriorityPipelines = append(nonPriorityPipelines, p)
+			}
+		}
+
+		filteredPipelines = append(priorityPipelines, nonPriorityPipelines...)
+	}
+
 	return filteredPipelines, nil
+}
+
+// filterPipelines filters pipelines by ref, ref contains and source
+// and returns if match with the all flags informed
+func filterPipelines(p *gitlab.PipelineInfo, flags entities.Flags) *gitlab.PipelineInfo {
+	if flags.Ref != "" && flags.Ref != p.Ref {
+		return nil
+	}
+	if flags.RefContains != "" && !strings.Contains(p.Ref, flags.RefContains) {
+		return nil
+	}
+	if flags.Source != "" && flags.Source != p.Source {
+		return nil
+	}
+	return p
 }
