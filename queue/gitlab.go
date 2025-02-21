@@ -19,8 +19,8 @@ func (s *service) fetchPipelines(token string, projectID int, flags entities.Fla
 			PerPage: 10,
 			Page:    1,
 		},
-		// Scope: gitlab.Ptr("running"),
-		Sort: gitlab.Ptr("desc"),
+		Scope: gitlab.Ptr("running"),
+		Sort:  gitlab.Ptr("desc"),
 	})
 	if err != nil {
 		s.logger.Fatalf("Failed to list pipelines: %v", err)
