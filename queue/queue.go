@@ -1,7 +1,7 @@
 package queue
 
 import (
-	"strings"
+	"regexp"
 	"time"
 
 	"github.com/leonardobiffi/gitlab-ci-pipeline-queue/entities"
@@ -79,7 +79,9 @@ func (s *service) Run(flags entities.Flags) {
 func (s *service) ignorePipelines(pipelines []*gitlab.PipelineInfo, pipelineID int, ignoreWhen string) bool {
 	for _, p := range pipelines {
 		if p.ID == pipelineID {
-			if strings.Contains(p.Ref, ignoreWhen) {
+			// regex to check if the ref contains the ignoreWhen string
+			r := regexp.MustCompile(ignoreWhen)
+			if r.MatchString(p.Ref) {
 				return true
 			} else {
 				return false
