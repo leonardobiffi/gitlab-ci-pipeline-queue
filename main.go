@@ -45,6 +45,11 @@ func main() {
 				Value:       true,
 				Usage:       "Wait for be the oldest pipeline",
 			},
+			&cli.StringFlag{
+				Name:        "ignore-when",
+				Destination: &flags.IgnoreWhen,
+				Usage:       "Ignore when the pipeline Ref contains the informed value",
+			},
 		},
 		Action: func(context.Context, *cli.Command) error {
 			queue := queue.New()

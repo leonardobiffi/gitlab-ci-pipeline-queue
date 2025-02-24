@@ -6,4 +6,5 @@ type Flags struct {
 	RefPriority string
 	Source      string
 	Wait        bool
+	IgnoreWhen  string
 }

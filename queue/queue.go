@@ -1,10 +1,12 @@
 package queue
 
 import (
+	"strings"
 	"time"
 
 	"github.com/leonardobiffi/gitlab-ci-pipeline-queue/entities"
 	"github.com/sirupsen/logrus"
+	gitlab "gitlab.com/gitlab-org/api/client-go"
 )
 
 type Service interface {
@@ -31,6 +33,15 @@ func (s *service) Run(flags entities.Flags) {
 		}
 		if err != nil {
 			s.logger.Fatalf("Failed to fetch pipelines: %v", err)
+		}
+
+		// check if the current pipeline should be ignored
+		if flags.IgnoreWhen != "" {
+			s.logger.Debugf("Check if pipeline contains: %s", flags.IgnoreWhen)
+			if s.ignorePipelines(pipelines, env.PipelineID, flags.IgnoreWhen) {
+				s.logger.Printf("Ignoring pipelines when ref contains: %s", flags.IgnoreWhen)
+				return
+			}
 		}
 
 		if len(pipelines) <= 1 {
@@ -62,6 +73,21 @@ func (s *service) Run(flags entities.Flags) {
 			s.logger.Fatalf("The current pipeline ID: %d is not the oldest...", env.PipelineID)
 		}
 	}
+}
+
+// ignorePipelines checks if the current pipeline contains the ignoreWhen ref
+func (s *service) ignorePipelines(pipelines []*gitlab.PipelineInfo, pipelineID int, ignoreWhen string) bool {
+	for _, p := range pipelines {
+		if p.ID == pipelineID {
+			if strings.Contains(p.Ref, ignoreWhen) {
+				return true
+			} else {
+				return false
+			}
+		}
+	}
+
+	return false
 }
 
 func New() Service {
